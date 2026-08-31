@@ -85,8 +85,9 @@ intentional: DSH hard-pins a client plugin's browser bundle to `lib/client.js`
 ## Publishing
 
 `prepublishOnly` runs `dist` automatically, so `npm publish` builds and lints
-before it goes out. Set a license before the first public release.
+before it goes out.
 
 ## License
 
-Not yet chosen.
+[Apache-2.0](LICENSE)
+
