@@ -1,110 +1,69 @@
-.wrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
+/* Flat chip trigger matching the sibling access-mode and model selects
+   (PermissionSelect.module.css / ModelSelect.module.css): 28px, transparent
+   bg, secondary label tone, caption chevron that rotates. The Menu primitive
+   supplies the dropdown surface, so nothing here styles a popover. */
 
 .trigger {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
+  gap: 4px;
+  min-width: 0;
+  max-width: 220px;
+  height: 28px;
+  padding: 0 4px 0 8px;
   border: none;
-  border-radius: 999px;
-  background: var(--dsw-alias-state-info-tertiary, rgba(77, 107, 254, 0.1));
-  color: var(--dsw-alias-state-info-label, #4d6bfe);
+  /* Rounded chip chrome, matching the sibling permission trigger. */
+  border-radius: 24px;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
   font-size: 13px;
-  font-weight: 500;
   line-height: 20px;
+  font-weight: 500;
   cursor: pointer;
 }
 
 .trigger:hover:not(:disabled) {
-  color: var(--dsw-alias-state-info-primary, #4d6bfe);
+  background: var(--dsw-alias-interactive-bg-hover);
 }
 
 .trigger:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-info-label, #4d6bfe);
-  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
 }
 
 .trigger:disabled {
-  opacity: 0.6;
+  color: var(--dsw-alias-label-dimmed);
   cursor: default;
 }
 
-.label {
-  opacity: 0.72;
+/* The 16px sparkle glyph renders one step smaller on the exposed trigger. */
+.triggerGlyph {
+  flex: 0 0 auto;
+  color: var(--dsw-alias-label-tertiary);
 }
 
-.value {
-  font-weight: 600;
+.triggerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.caret,
-.caretOpen {
+.chevron {
+  /* inline-flex, not inline: reserves baseline descent under the svg so it
+     stays centered in the 28px trigger. */
   display: inline-flex;
-  font-size: 10px;
-  line-height: 1;
+  flex: 0 0 auto;
+  color: var(--dsw-alias-label-caption);
   transition: transform 120ms ease;
 }
 
-.caretOpen {
+.chevronOpen {
   transform: rotate(180deg);
 }
 
-.menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 30;
-  min-width: 220px;
-  padding: 4px;
-  border: 1px solid var(--dsw-color-border, rgba(0, 0, 0, 0.08));
-  border-radius: 10px;
-  background: var(--dsw-color-bg-elevated, #ffffff);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-}
-
-.item,
-.itemActive {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  gap: 2px;
-  padding: 6px 8px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.item:hover {
-  background: var(--dsw-color-bg-hover, rgba(0, 0, 0, 0.05));
-}
-
-.itemActive {
-  background: var(--dsw-alias-state-info-tertiary, rgba(77, 107, 254, 0.1));
-}
-
-.itemName {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 18px;
-  color: var(--dsw-color-text-primary, #1a1a1a);
-}
-
-.itemDesc {
-  font-size: 12px;
-  line-height: 17px;
-  color: var(--dsw-color-text-secondary, #6b6b6b);
-}
-
 .error {
-  color: var(--dsw-alias-state-error-primary, #d93025);
+  color: var(--dsw-alias-state-error-primary);
   font-size: 12px;
   line-height: 18px;
 }

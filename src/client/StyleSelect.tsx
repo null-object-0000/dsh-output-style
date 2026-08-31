@@ -1,16 +1,28 @@
 /**
- * The composer selector: a compact dropdown in the `conversation.input.left`
- * tool row (beside the access-mode and plan chrome). It reads the
- * `outputStyle` projection through the standard kit and switches styles by
- * submitting `/style <id>` over the remote command channel — the same write
- * path as the command, so the selector and `/style` can never disagree.
+ * The composer selector: a flat chip in the `conversation.input.left` tool
+ * row that reads the `outputStyle` projection through the standard kit and
+ * switches styles by submitting `/style <id>` — the same write path as the
+ * command, so the selector and `/style` can never disagree.
+ *
+ * It mirrors the sibling access-mode and model triggers: the shared `Menu`
+ * primitive (external in the browser module table) owns the popover,
+ * outside-click / Escape dismissal, upward `side="top"` placement, and the
+ * trailing check; the trigger is the 28px flat neutral chip those selects
+ * use. No custom popover, no invented CSS variables.
  *
  * @module dsh-output-style/client/StyleSelect
  */
 
 import type { ReactNode } from 'react'
+import clsx from 'clsx'
+import {
+  IconChevronDownOutline14,
+  IconSparkle16,
+  Menu,
+  type MenuEntry,
+} from '@deepseek-ai/dsh-client-ui-primitives'
 import { h, React } from './react'
-import classes from './StyleSelect.module.css'
+import css from './StyleSelect.module.css'
 
 /** Local wire-value shape the projection delivers (avoid dragging zod in). */
 export interface StyleSelectView {
@@ -28,10 +40,7 @@ export interface StyleSelectProps {
   chooseStyle?: (value: string) => Promise<string | null>
 }
 
-/**
- * A localized label: prefers the locale dictionary key `style.<value>` and
- * falls back to the projection-supplied display name.
- */
+/** A localized style display name: locale dictionary key, then the projection name. */
 function labelOf(t: StyleSelectProps['t'], option: { value: string; name: string }): string {
   const key = `style.${option.value}`
   const localized = t?.(key)
@@ -44,37 +53,28 @@ export function StyleSelect(props: StyleSelectProps): ReactNode {
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const aliveRef = React.useRef(true)
-  const rootRef = React.useRef<HTMLElement | null>(null)
 
   React.useEffect(() => {
     aliveRef.current = true
     return () => { aliveRef.current = false }
   }, [])
 
-  // The standard kit key-addressed projection reader.
   const view = useProjection?.('outputStyle') as StyleSelectView | undefined
   const options = view?.options ?? []
   const current = view?.current ?? 'default'
-
-  // Close on outside pointer down while open.
-  React.useEffect(() => {
-    if (!open) return
-    const onDown = (event: MouseEvent): void => {
-      if (rootRef.current !== null && !rootRef.current.contains(event.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [open])
+  const currentOption = options.find(option => option.value === current)
+  const currentLabel = currentOption === undefined ? current : labelOf(t, currentOption)
 
   // No session: the composer seat is unmounted, but guard against a stale frame.
   if (sessionId === undefined || chooseStyle === undefined) return null
 
-  const currentOption = options.find(option => option.value === current)
+  const items: readonly MenuEntry[] = options.map(option => ({ id: option.value, label: labelOf(t, option) }))
 
   const select = (value: string): void => {
+    setOpen(false)
+    if (value === current) return
     setBusy(true)
     setError(null)
-    setOpen(false)
     chooseStyle(value).then((failure) => {
       if (!aliveRef.current) return
       setBusy(false)
@@ -86,32 +86,24 @@ export function StyleSelect(props: StyleSelectProps): ReactNode {
     })
   }
 
-  const currentLabel = currentOption === undefined ? current : labelOf(t, currentOption)
-
-  return h('div', { ref: rootRef, className: classes.wrap },
-    h('button', {
+  return h(Menu, {
+    open,
+    items,
+    selectedId: current,
+    side: 'top',
+    onSelect: select,
+    onClose: () => { setOpen(false) },
+    anchor: h('button', {
       type: 'button',
-      className: classes.trigger,
-      'aria-label': t?.('select.aria'),
-      title: t?.('select.current', { style: currentLabel }),
+      className: css.trigger,
+      'aria-label': t?.('select.aria', { style: currentLabel }),
+      title: currentOption?.description,
       disabled: busy,
-      onClick: () => setOpen(value => !value),
+      onClick: () => { setOpen(!open) },
     },
-      h('span', { className: classes.label }, t?.('select.title')),
-      h('span', { className: classes.value }, currentLabel),
-      h('span', { className: open ? classes.caretOpen : classes.caret }, '▾')),
-    open && h('div', { className: classes.menu, role: 'listbox', 'aria-label': t?.('select.aria') },
-      options.map(option => h('button', {
-        key: option.value,
-        type: 'button',
-        role: 'option',
-        'aria-selected': option.value === current,
-        className: option.value === current ? classes.itemActive : classes.item,
-        onClick: () => select(option.value),
-      },
-        h('span', { className: classes.itemName }, labelOf(t, option)),
-        h('span', { className: classes.itemDesc }, option.description))),
+      h(IconSparkle16, { className: css.triggerGlyph }),
+      h('span', { className: css.triggerLabel }, currentLabel),
+      h(IconChevronDownOutline14, { className: clsx(css.chevron, open && css.chevronOpen) }),
     ),
-    error !== null && h('span', { className: classes.error, role: 'status', title: error }, t?.('error.failed')),
-  )
+  }, error !== null && h('span', { className: css.error, role: 'status', title: error }, t?.('error.failed')))
 }
