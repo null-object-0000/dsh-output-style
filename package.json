@@ -31,6 +31,8 @@
   ],
   "scripts": {
     "build": "tsdown",
+    "dist": "pnpm run build && pnpm publint",
+    "prepublishOnly": "pnpm run dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "oxlint"
@@ -91,6 +93,7 @@
     "@types/react": "^18.3.31",
     "clsx": "^2.1.1",
     "lightningcss": "^1.33.0",
+    "publint": "^0.3.24",
     "react": "^18.3.1",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.3",
