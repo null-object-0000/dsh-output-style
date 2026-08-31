@@ -57,9 +57,10 @@
     "cordis",
     "plugin",
     "output-style",
-    "adhd",
-    "eli5",
-    "bluf"
+    "response-style",
+    "prompt",
+    "llm",
+    "ui"
   ],
   "license": "Apache-2.0",
   "dependencies": {
