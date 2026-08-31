@@ -1,5 +1,7 @@
 # dsh-output-style
 
+English | [中文](README.zh.md)
+
 Session-scoped output styles for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): a `/style` slash command and a composer selector that change **how** the model presents answers — never what it knows or which tools it has.
 
 Built-in styles:
