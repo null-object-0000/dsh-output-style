@@ -1,3 +1,5 @@
+import { I_HAVE_ADHD_PROMPT } from './i-have-adhd.ts'
+
 /**
  * Built-in output styles: the fixed MVP catalog. Each style is a system-prompt
  * body that changes how the model presents information — never what it knows
@@ -37,16 +39,9 @@ export const OUTPUT_STYLES: Readonly<Record<OutputStyleId, OutputStyle>> = Objec
   },
   'adhd-friendly': {
     id: 'adhd-friendly',
-    name: 'ADHD-friendly',
-    description: 'Short, scannable chunks with one clear next step.',
-    prompt: [
-      'Organize every response for attention-sensitive reading.',
-      'Break content into short, scannable chunks with clear headings.',
-      'Put the single most important point first, then the immediate next step.',
-      'Use short sentences and short paragraphs; avoid walls of text.',
-      'End with one concrete "Next step" line.',
-      'Minimize digressions; when a detail is optional, say so in one line and continue.',
-    ].join('\n'),
+    name: 'I Have ADHD',
+    description: 'Action-first, ADHD-friendly output adapted from ayghri/i-have-adhd.',
+    prompt: I_HAVE_ADHD_PROMPT,
   },
   'eli5': {
     id: 'eli5',

@@ -9,7 +9,7 @@
 | 风格 | 作用 |
 | --- | --- |
 | `default` | 不注入任何引导，正常回答。 |
-| `adhd-friendly` | 短小、可扫读的分块，每段给出一个明确的下一步。 |
+| `adhd-friendly` | 改编自 [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd) 的行动优先、ADHD 友好输出。 |
 | `eli5` | 用平实语言，每个概念配一个具体类比。 |
 | `bluf` | 结论先行，再给简要理由。 |
 
@@ -59,6 +59,14 @@ dsh plugin --profile web remove dsh-output-style
 
 host 和 client 都读取 `/style` 的 `command/run` / `command/done` 事件的同一份纯折叠（`src/style-command.ts`），所以模型看到的引导文本和下拉框显示永远一致。
 
+### I Have ADHD 适配
+
+`adhd-friendly` 保留了上游项目的 10 条行为规则、例外情况和发送前检查。开启与持久化由 DSH 的
+`/style` 和会话投影负责，因此没有嵌入上游 Skill 自己的开关指令。上游中“进入 harness plan”的指令也已收窄：选择输出风格不会改变 Agent 的运行模式。
+
+本适配固定对应上游提交 `cbe69fb83c08a37cf54d5ec9ec6bb88c8bc9973c`。归属和许可证见
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
+
 ## 开发
 
 ```sh
@@ -77,4 +85,5 @@ pnpm run dist   # 构建 + 发布 lint（publint）
 
 ## License
 
-[Apache-2.0](LICENSE)
+[Apache-2.0](LICENSE)。改编的 `i-have-adhd` 内容使用 MIT 许可证，详见
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。

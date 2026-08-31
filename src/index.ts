@@ -20,7 +20,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { AssembleContext } from '@deepseek-ai/dsh-system-prompt'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
-import { OUTPUT_STYLES, OUTPUT_STYLE_IDS, type OutputStyleId } from './styles.ts'
+import { OUTPUT_STYLES, OUTPUT_STYLE_IDS } from './styles.ts'
 import { applyStyleEvent, foldStyleState, parseStyleInput, STYLE_COMMAND, type StyleFoldState } from './style-command.ts'
 import { outputStyleViewSchema, styleFoldStateSchema, type OutputStyleView } from './types.ts'
 

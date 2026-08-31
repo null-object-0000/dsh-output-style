@@ -1,6 +1,6 @@
 {
   "name": "dsh-output-style",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Session-scoped output styles for DeepSeek Harness: a /style command and a composer selector (Default, ADHD-friendly, ELI5, BLUF).",
   "author": "null-object-0000",
   "repository": {
@@ -28,6 +28,7 @@
     "lib/client.js",
     "cordis.patch.yml",
     "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
     "README.md",
     "README.zh.md"
   ],
@@ -97,6 +98,7 @@
     "@types/react": "^18.3.31",
     "clsx": "^2.1.1",
     "lightningcss": "^1.33.0",
+    "oxlint": "^1.80.0",
     "publint": "^0.3.24",
     "react": "^18.3.1",
     "tsdown": "^0.22.14",

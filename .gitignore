@@ -1,6 +1,7 @@
 node_modules/
 .pnpm-store/
 .corepack-cache/
+.npm-cache-tmp/
 lib/
 *.log
 .DS_Store

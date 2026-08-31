@@ -9,7 +9,7 @@ Built-in styles:
 | Style | What it does |
 | --- | --- |
 | `default` | No guidance — the assistant answers normally. |
-| `adhd-friendly` | Short, scannable chunks with one clear next step. |
+| `adhd-friendly` | Action-first, ADHD-friendly output adapted from [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd). |
 | `eli5` | Plain language with one concrete analogy per idea. |
 | `bluf` | Bottom line up front, then brief reasoning. |
 
@@ -69,6 +69,18 @@ The host and client both read the same pure fold of `/style`'s `command/run` /
 `command/done` events (`src/style-command.ts`), so the model-visible guidance
 and the dropdown always agree.
 
+### I Have ADHD adaptation
+
+`adhd-friendly` preserves the canonical project's ten behavioral rules,
+exceptions, and pre-send check. DSH owns activation and persistence, so the
+upstream skill's self-activation instructions are not embedded. Its request to
+enter a harness plan is also narrowed: choosing an output style never changes
+the agent's operating mode.
+
+The adaptation is pinned to upstream revision
+`cbe69fb83c08a37cf54d5ec9ec6bb88c8bc9973c`. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for attribution and license.
+
 ## Development
 
 ```sh
@@ -86,10 +98,40 @@ intentional: DSH hard-pins a client plugin's browser bundle to `lib/client.js`
 
 ## Publishing
 
-`prepublishOnly` runs `dist` automatically, so `npm publish` builds and lints
-before it goes out.
+Publishing is driven by [GitHub Actions](.github/workflows/publish.yml) using
+npm **Trusted Publishing (OIDC)** — no long-lived token. It fires on a `v*`
+tag push, runs typecheck/test/build/publint, verifies the tag matches
+`package.json` version, then `npm publish` (which also runs `prepublishOnly` →
+`dist`).
+
+### One-time: register the npm trusted publisher
+
+npm composes the OIDC credential against a trusted publisher you configure on
+the package. Go to `https://www.npmjs.com/package/dsh-output-style/access` (or
+create it if the package is new) and add a **Trusted Publishing** connection
+with:
+
+- Provider: `GitHub`
+- Repository: `null-object-0000/dsh-output-style`
+- Workflow filename: `publish.yml`
+- Environment: leave default (no environment set in the workflow)
+
+After that, a tag push publishes automatically.
+
+### Release a new version
+
+```sh
+# bump the version (updates package.json + a git tag)
+npm version patch   # or minor / major
+git push --follow-tags
+```
+
+The `v*` tag push triggers the workflow, which publishes `dsh-output-style@<version>`.
+
+`prepublishOnly` runs `dist` automatically, so a manual `npm publish` also
+builds and lints before it goes out.
 
 ## License
 
-[Apache-2.0](LICENSE)
-
+[Apache-2.0](LICENSE). The adapted `i-have-adhd` material is available under
+the MIT License; see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
