@@ -1,0 +1,110 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--dsw-alias-state-info-tertiary, rgba(77, 107, 254, 0.1));
+  color: var(--dsw-alias-state-info-label, #4d6bfe);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.trigger:hover:not(:disabled) {
+  color: var(--dsw-alias-state-info-primary, #4d6bfe);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-info-label, #4d6bfe);
+  outline-offset: 2px;
+}
+
+.trigger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.label {
+  opacity: 0.72;
+}
+
+.value {
+  font-weight: 600;
+}
+
+.caret,
+.caretOpen {
+  display: inline-flex;
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 120ms ease;
+}
+
+.caretOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 220px;
+  padding: 4px;
+  border: 1px solid var(--dsw-color-border, rgba(0, 0, 0, 0.08));
+  border-radius: 10px;
+  background: var(--dsw-color-bg-elevated, #ffffff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.item,
+.itemActive {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 2px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--dsw-color-bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+.itemActive {
+  background: var(--dsw-alias-state-info-tertiary, rgba(77, 107, 254, 0.1));
+}
+
+.itemName {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--dsw-color-text-primary, #1a1a1a);
+}
+
+.itemDesc {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--dsw-color-text-secondary, #6b6b6b);
+}
+
+.error {
+  color: var(--dsw-alias-state-error-primary, #d93025);
+  font-size: 12px;
+  line-height: 18px;
+}
