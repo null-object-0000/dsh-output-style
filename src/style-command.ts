@@ -20,6 +20,17 @@ import { isOutputStyleId, OFF, type OutputStyleId } from './styles.ts'
 /** Command name registered on `ctx.commands`; also the log's `command/run` name. */
 export const STYLE_COMMAND = 'style'
 
+/** Shortcut commands and their canonical persisted style ids. */
+export const STYLE_COMMAND_ALIASES = Object.freeze({
+  eli5: 'eli5',
+  adhd: 'adhd-friendly',
+  bluf: 'bluf',
+  layers: 'layers',
+} satisfies Record<string, OutputStyleId>)
+
+/** Commands on the other guidance axis. A successful one disables output style. */
+const METHOD_COMMAND_NAMES = new Set(['method', 'interview', 'feynman', 'rubber-duck'])
+
 /** One strict parse of a `/style` input line. */
 export type StyleInput =
   | { kind: 'none' }
@@ -38,6 +49,7 @@ export function parseStyleInput(rawInput: string): StyleInput {
   const arg = rawInput.trim()
   if (arg === '') return { kind: 'none' }
   if (arg === OFF || arg === 'default') return { kind: 'switch', id: 'default' }
+  if (arg === 'adhd') return { kind: 'switch', id: 'adhd-friendly' }
   if (isOutputStyleId(arg)) return { kind: 'switch', id: arg }
   return { kind: 'unknown', name: arg }
 }
@@ -64,12 +76,27 @@ export const EMPTY_STYLE_STATE: StyleFoldState = { current: 'default', pending: 
  */
 export function applyStyleEvent(state: StyleFoldState, event: SessionEvent): StyleFoldState {
   if (event.type === 'command/run') {
-    if (event.data.name !== STYLE_COMMAND || event.data.args === undefined) return state
-    const input = parseStyleInput(event.data.args)
-    if (input.kind !== 'switch') return state
+    let target: OutputStyleId | undefined
+    if (event.data.name === STYLE_COMMAND) {
+      const input = parseStyleInput(event.data.args ?? '')
+      if (input.kind === 'switch') target = input.id
+    } else if ((event.data.args ?? '').trim() === '') {
+      target = STYLE_COMMAND_ALIASES[event.data.name as keyof typeof STYLE_COMMAND_ALIASES]
+    }
+    // The public UI is one answer-mode selector. Preserve separate folds for
+    // prompt composition, while making every valid method switch replace the
+    // active style (including `/method off`, which means normal answering).
+    if (target === undefined && METHOD_COMMAND_NAMES.has(event.data.name)) {
+      const args = (event.data.args ?? '').trim()
+      const isValidMethodSwitch = event.data.name === 'method'
+        ? ['off', 'default', 'normal', 'interview', 'feynman', 'rubber-duck'].includes(args)
+        : args === ''
+      if (isValidMethodSwitch) target = 'default'
+    }
+    if (target === undefined) return state
     const commandId = String(event.data.commandId)
     if (state.pending?.commandId === commandId) return state
-    return { ...state, pending: { commandId, target: input.id } }
+    return { ...state, pending: { commandId, target } }
   }
   if (event.type !== 'command/done' || state.pending === null) return state
   if (String(event.data.commandId) !== state.pending.commandId) return state

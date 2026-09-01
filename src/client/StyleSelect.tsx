@@ -1,54 +1,85 @@
-/**
- * The composer selector: a flat chip in the `conversation.input.left` tool
- * row that reads the `outputStyle` projection through the standard kit and
- * switches styles by submitting `/style <id>` — the same write path as the
- * command, so the selector and `/style` can never disagree.
- *
- * It mirrors the sibling access-mode and model triggers: the shared `Menu`
- * primitive (external in the browser module table) owns the popover,
- * outside-click / Escape dismissal, upward `side="top"` placement, and the
- * trailing check; the trigger is the 28px flat neutral chip those selects
- * use. No custom popover, no invented CSS variables.
- *
- * @module dsh-output-style/client/StyleSelect
- */
+/** One single-select answer-mode control backed by the two durable projections. */
 
 import type { ReactNode } from 'react'
 import clsx from 'clsx'
 import {
   IconChevronDownOutline14,
-  IconSparkle16,
   Menu,
   type MenuEntry,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { h, React } from './react'
 import css from './StyleSelect.module.css'
 
-/** Local wire-value shape the projection delivers (avoid dragging zod in). */
-export interface StyleSelectView {
+interface ProjectionView {
   options: { value: string; name: string; description: string }[]
   current: string
 }
 
-/** Props this component consumes (framework standard kit + inject face + locale). */
+type ModeKind = 'style' | 'method'
+
+interface AnswerModeOption {
+  id: string
+  kind: ModeKind
+  value: string
+  name: string
+  description: string
+}
+
 export interface StyleSelectProps {
   sessionId?: string
   useProjection?: <K extends string>(key: K) => unknown
-  /** Bound translator for the plugin's locale namespace. */
   t?: (key: string, params?: Record<string, string | number>) => string
-  /** Submits `/style <value>` and resolves null on success or a message on failure. */
-  chooseStyle?: (value: string) => Promise<string | null>
+  chooseValue?: (kind: ModeKind, value: string) => Promise<string | null>
 }
 
-/** A localized style display name: locale dictionary key, then the projection name. */
-function labelOf(t: StyleSelectProps['t'], option: { value: string; name: string }): string {
-  const key = `style.${option.value}`
-  const localized = t?.(key)
-  return localized === undefined || localized === key ? option.name : localized
+function localized(
+  t: StyleSelectProps['t'],
+  kind: ModeKind,
+  option: { value: string; name: string; description: string },
+): { name: string; description: string } {
+  const prefix = kind === 'style' ? 'style' : 'method'
+  const nameKey = `${prefix}.${option.value}`
+  const descriptionKey = `${nameKey}.description`
+  const name = t?.(nameKey)
+  const description = t?.(descriptionKey)
+  return {
+    name: name === undefined || name === nameKey ? option.name : name,
+    description: description === undefined || description === descriptionKey ? option.description : description,
+  }
+}
+
+function containsCjk(value: string): boolean {
+  return /[\u3400-\u9fff]/.test(value)
+}
+
+/** Merge the internal axes into the one public choice order. */
+function answerModeOptions(
+  styleView: ProjectionView | undefined,
+  methodView: ProjectionView | undefined,
+  t: StyleSelectProps['t'],
+): AnswerModeOption[] {
+  const styles = new Map((styleView?.options ?? []).map(option => [option.value, option]))
+  const methods = new Map((methodView?.options ?? []).map(option => [option.value, option]))
+  const order: readonly [ModeKind, string][] = [
+    ['style', 'default'],
+    ['style', 'eli5'],
+    ['style', 'adhd-friendly'],
+    ['method', 'interview'],
+    ['method', 'feynman'],
+    ['style', 'bluf'],
+    ['style', 'layers'],
+    ['method', 'rubber-duck'],
+  ]
+  return order.flatMap(([kind, value]) => {
+    const option = (kind === 'style' ? styles : methods).get(value)
+    if (option === undefined) return []
+    const copy = localized(t, kind, option)
+    return [{ id: `${kind}:${value}`, kind, value, ...copy }]
+  })
 }
 
 export function StyleSelect(props: StyleSelectProps): ReactNode {
-  const { sessionId, useProjection, t, chooseStyle } = props
+  const { sessionId, useProjection, t, chooseValue } = props
   const [open, setOpen] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -59,23 +90,45 @@ export function StyleSelect(props: StyleSelectProps): ReactNode {
     return () => { aliveRef.current = false }
   }, [])
 
-  const view = useProjection?.('outputStyle') as StyleSelectView | undefined
-  const options = view?.options ?? []
-  const current = view?.current ?? 'default'
-  const currentOption = options.find(option => option.value === current)
-  const currentLabel = currentOption === undefined ? current : labelOf(t, currentOption)
+  const styleView = useProjection?.('outputStyle') as ProjectionView | undefined
+  const methodView = useProjection?.('conversationMethod') as ProjectionView | undefined
+  const options = answerModeOptions(styleView, methodView, t)
+  const currentId = methodView?.current !== undefined && methodView.current !== 'off'
+    ? `method:${methodView.current}`
+    : `style:${styleView?.current ?? 'default'}`
+  const current = options.find(option => option.id === currentId) ?? options[0]
+  const currentLabel = current?.name ?? t?.('style.default') ?? 'Default'
 
-  // No session: the composer seat is unmounted, but guard against a stale frame.
-  if (sessionId === undefined || chooseStyle === undefined) return null
+  if (sessionId === undefined || chooseValue === undefined) return null
 
-  const items: readonly MenuEntry[] = options.map(option => ({ id: option.value, label: labelOf(t, option) }))
+  const itemOf = (option: AnswerModeOption): MenuEntry => ({
+    id: option.id,
+    label: h('span', { className: css.option },
+      h('span', { className: clsx(css.optionName, containsCjk(option.name) && css.optionCjk) }, option.name),
+      h('span', { className: clsx(css.optionDescription, containsCjk(option.description) && css.optionCjk) }, option.description),
+    ),
+  })
+  const defaultOption = options.find(option => option.value === 'default')
+  const styleOptions = options.filter(option => option.kind === 'style' && option.value !== 'default')
+  const methodOptions = options.filter(option => option.kind === 'method')
+  const items: readonly MenuEntry[] = [
+    ...(defaultOption === undefined ? [] : [itemOf(defaultOption)]),
+    { type: 'separator', id: 'separator-default' },
+    { type: 'label', id: 'label-style', text: t?.('group.style') ?? 'Presentation' },
+    ...styleOptions.map(itemOf),
+    { type: 'separator', id: 'separator-method' },
+    { type: 'label', id: 'label-method', text: t?.('group.method') ?? 'Thinking guidance' },
+    ...methodOptions.map(itemOf),
+  ]
 
-  const select = (value: string): void => {
+  const select = (id: string): void => {
     setOpen(false)
-    if (value === current) return
+    if (id === currentId) return
+    const option = options.find(candidate => candidate.id === id)
+    if (option === undefined) return
     setBusy(true)
     setError(null)
-    chooseStyle(value).then((failure) => {
+    chooseValue(option.kind, option.value).then((failure) => {
       if (!aliveRef.current) return
       setBusy(false)
       setError(failure)
@@ -89,20 +142,19 @@ export function StyleSelect(props: StyleSelectProps): ReactNode {
   return h(Menu, {
     open,
     items,
-    selectedId: current,
+    selectedId: currentId,
     side: 'top',
     onSelect: select,
     onClose: () => { setOpen(false) },
     anchor: h('button', {
       type: 'button',
       className: css.trigger,
-      'aria-label': t?.('select.aria', { style: currentLabel }),
-      title: currentOption?.description,
+      'aria-label': t?.('select.aria', { mode: currentLabel }),
+      title: current?.description,
       disabled: busy,
       onClick: () => { setOpen(!open) },
     },
-      h(IconSparkle16, { className: css.triggerGlyph }),
-      h('span', { className: css.triggerLabel }, currentLabel),
+      h('span', { className: clsx(css.triggerLabel, containsCjk(currentLabel) && css.triggerLabelCjk) }, currentLabel),
       h(IconChevronDownOutline14, { className: clsx(css.chevron, open && css.chevronOpen) }),
     ),
   }, error !== null && h('span', { className: css.error, role: 'status', title: error }, t?.('error.failed')))

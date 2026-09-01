@@ -4,14 +4,13 @@
  * A plain Cordis plugin module (ESM) loaded by the harness as the
  * `dsh-output-style` loader row. It registers:
  *
- * - a model-visible system-prompt section holding the active style's body;
- * - the `outputStyle` session projection (folds `/style` command lifecycle);
- * - the `/style` slash command.
+ * - model-visible sections for output style and conversation method;
+ * - durable session projections folded from command lifecycle events;
+ * - canonical commands plus user-facing shortcut commands.
  *
- * The projection fold and the prompt section both read the SAME pure fold of
- * `command/run` + `command/done`, so the model-visible text and the client
- * selector always agree, and both reconstruct from the session log on resume
- * and fork.
+ * Both internal axes read their matching pure fold of `command/run` +
+ * `command/done`. A successful switch on either axis clears the other, so the
+ * single client selector and model-visible text agree after resume and fork.
  *
  * @module dsh-output-style
  */
@@ -21,8 +20,33 @@ import type {} from '@deepseek-ai/dsh-agent'
 import type { AssembleContext } from '@deepseek-ai/dsh-system-prompt'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import { OUTPUT_STYLES, OUTPUT_STYLE_IDS } from './styles.ts'
-import { applyStyleEvent, foldStyleState, parseStyleInput, STYLE_COMMAND, type StyleFoldState } from './style-command.ts'
-import { outputStyleViewSchema, styleFoldStateSchema, type OutputStyleView } from './types.ts'
+import {
+  applyStyleEvent,
+  EMPTY_STYLE_STATE,
+  foldStyleState,
+  parseStyleInput,
+  STYLE_COMMAND,
+  STYLE_COMMAND_ALIASES,
+  type StyleFoldState,
+} from './style-command.ts'
+import { CONVERSATION_METHODS, CONVERSATION_METHOD_IDS } from './methods.ts'
+import {
+  applyMethodEvent,
+  EMPTY_METHOD_STATE,
+  foldMethodState,
+  METHOD_COMMAND,
+  METHOD_COMMAND_ALIASES,
+  parseMethodInput,
+  type MethodFoldState,
+} from './method-command.ts'
+import {
+  conversationMethodViewSchema,
+  methodFoldStateSchema,
+  outputStyleViewSchema,
+  styleFoldStateSchema,
+  type ConversationMethodView,
+  type OutputStyleView,
+} from './types.ts'
 
 /** Cordis plugin name; keep this stable after publishing. */
 export const name = 'dsh-output-style'
@@ -34,10 +58,26 @@ export const name = 'dsh-output-style'
  */
 export const inject = ['systemPrompt']
 
-export { parseStyleInput, applyStyleEvent, foldStyleState, STYLE_COMMAND } from './style-command.ts'
+export {
+  parseStyleInput,
+  applyStyleEvent,
+  foldStyleState,
+  STYLE_COMMAND,
+  STYLE_COMMAND_ALIASES,
+} from './style-command.ts'
 export type { StyleFoldState, StyleInput } from './style-command.ts'
 export { OUTPUT_STYLES, OUTPUT_STYLE_IDS, OFF, isOutputStyleId } from './styles.ts'
 export type { OutputStyle, OutputStyleId } from './styles.ts'
+export {
+  parseMethodInput,
+  applyMethodEvent,
+  foldMethodState,
+  METHOD_COMMAND,
+  METHOD_COMMAND_ALIASES,
+} from './method-command.ts'
+export type { MethodFoldState, MethodInput } from './method-command.ts'
+export { CONVERSATION_METHODS, CONVERSATION_METHOD_IDS, isConversationMethodId } from './methods.ts'
+export type { ConversationMethod, ConversationMethodId } from './methods.ts'
 export type * from './types.ts'
 
 /** Config: deployment-owned section order. Unknown keys fail the load. */
@@ -52,8 +92,14 @@ export const DEFAULT_SECTION_ORDER = 90
 /** The prompt-section name; a fixed registry key a scoped composition could shadow. */
 export const STYLE_SECTION_NAME = 'output-style:guidance'
 
+/** Method guidance follows the presentation-style section. */
+export const METHOD_SECTION_NAME = 'conversation-method:guidance'
+
 /** The projection key this package owns. */
 export const STYLE_PROJECTION_KEY = 'outputStyle'
+
+/** The conversation-method projection key this package owns. */
+export const METHOD_PROJECTION_KEY = 'conversationMethod'
 
 /**
  * Validate the plugin config. Missing or unknown fields, or a non-finite
@@ -92,7 +138,7 @@ const outputStyleProjection = {
   key: STYLE_PROJECTION_KEY,
   stateVersion: 1,
   stateSchema: styleFoldStateSchema,
-  init: () => EMPTY_STYLE_STATE(),
+  init: () => EMPTY_STYLE_STATE,
   apply: applyStyleEvent,
   wire: {
     viewSchema: outputStyleViewSchema,
@@ -100,9 +146,28 @@ const outputStyleProjection = {
   },
 } satisfies ProjectionDefinition<'outputStyle', StyleFoldState>
 
-function EMPTY_STYLE_STATE(): StyleFoldState {
-  return { current: 'default', pending: null }
+function viewMethodSelection(state: MethodFoldState): ConversationMethodView {
+  return {
+    options: CONVERSATION_METHOD_IDS.map(id => ({
+      value: id,
+      name: CONVERSATION_METHODS[id].name,
+      description: CONVERSATION_METHODS[id].description,
+    })),
+    current: state.current,
+  }
 }
+
+const conversationMethodProjection = {
+  key: METHOD_PROJECTION_KEY,
+  stateVersion: 1,
+  stateSchema: methodFoldStateSchema,
+  init: () => EMPTY_METHOD_STATE,
+  apply: applyMethodEvent,
+  wire: {
+    viewSchema: conversationMethodViewSchema,
+    view: viewMethodSelection,
+  },
+} satisfies ProjectionDefinition<'conversationMethod', MethodFoldState>
 
 /**
  * Apply the plugin to its Cordis context.
@@ -127,9 +192,21 @@ export function apply(ctx: Context, config: Config = {}): void {
     },
   })
 
+  ctx.systemPrompt.section({
+    name: METHOD_SECTION_NAME,
+    order: sectionOrder + 1,
+    text: (context: AssembleContext): string => {
+      const agent = context.agent
+      if (agent === undefined) return ''
+      const state = foldMethodState(agent.session.events)
+      return state.current === 'off' ? '' : CONVERSATION_METHODS[state.current].prompt
+    },
+  })
+
   // Client-visible projection over the same fold.
   ctx.inject(['sessionProjections'], (projectionCtx) => {
     projectionCtx.sessionProjections.register(outputStyleProjection)
+    projectionCtx.sessionProjections.register(conversationMethodProjection)
   })
 
   // The /style command: the one write path a web client uses. The registry
@@ -140,7 +217,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     commandCtx.commands.register({
       name: STYLE_COMMAND,
       description: 'Switch the model output style for this session',
-      input: { hint: '<default|adhd-friendly|eli5|bluf|off>' },
+      input: { hint: '<default|adhd|eli5|bluf|layers|off>' },
       handler: ({ agent, rawInput }) => {
         const input = parseStyleInput(rawInput)
         if (input.kind === 'none') return { kind: 'success', text: listLine(agent.session.events) }
@@ -148,6 +225,38 @@ export function apply(ctx: Context, config: Config = {}): void {
         return { kind: 'success', text: `output style: ${input.id}` }
       },
     })
+
+    for (const [shortcut, target] of Object.entries(STYLE_COMMAND_ALIASES)) {
+      commandCtx.commands.register({
+        name: shortcut,
+        description: OUTPUT_STYLES[target].description,
+        handler: ({ rawInput }) => rawInput.trim() === ''
+          ? { kind: 'success', text: `output style: ${target}` }
+          : { kind: 'error', text: `/${shortcut} does not accept input` },
+      })
+    }
+
+    commandCtx.commands.register({
+      name: METHOD_COMMAND,
+      description: 'Switch the guided conversation method for this session',
+      input: { hint: '<interview|feynman|rubber-duck|off>' },
+      handler: ({ agent, rawInput }) => {
+        const input = parseMethodInput(rawInput)
+        if (input.kind === 'none') return { kind: 'success', text: listMethodLine(agent.session.events) }
+        if (input.kind === 'unknown') return { kind: 'error', text: unknownMethodLine(input.name) }
+        return { kind: 'success', text: `conversation method: ${input.id}` }
+      },
+    })
+
+    for (const [shortcut, target] of Object.entries(METHOD_COMMAND_ALIASES)) {
+      commandCtx.commands.register({
+        name: shortcut,
+        description: CONVERSATION_METHODS[target].description,
+        handler: ({ rawInput }) => rawInput.trim() === ''
+          ? { kind: 'success', text: `conversation method: ${target}` }
+          : { kind: 'error', text: `/${shortcut} does not accept input` },
+      })
+    }
   })
 }
 
@@ -165,4 +274,18 @@ function listLine(events: Parameters<typeof foldStyleState>[0]): string {
 function unknownLine(name: string): string {
   const available = OUTPUT_STYLE_IDS.join(', ')
   return `unknown output style "${name}" (available: ${available})`
+}
+
+function listMethodLine(events: Parameters<typeof foldMethodState>[0]): string {
+  const current = foldMethodState(events).current
+  const lines = [`current conversation method: ${current}`]
+  for (const id of CONVERSATION_METHOD_IDS) {
+    lines.push(`${CONVERSATION_METHODS[id].name} — ${CONVERSATION_METHODS[id].description}`)
+  }
+  return lines.join('\n')
+}
+
+function unknownMethodLine(name: string): string {
+  const available = CONVERSATION_METHOD_IDS.join(', ')
+  return `unknown conversation method "${name}" (available: ${available})`
 }

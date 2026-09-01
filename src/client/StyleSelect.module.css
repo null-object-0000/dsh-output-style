@@ -36,17 +36,51 @@
   cursor: default;
 }
 
-/* The 16px sparkle glyph renders one step smaller on the exposed trigger. */
-.triggerGlyph {
-  flex: 0 0 auto;
-  color: var(--dsw-alias-label-tertiary);
-}
-
 .triggerLabel {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* PingFang/YaHei Han glyphs occupy more of the em box than the model's Latin
+   name. One pixel down gives the two adjacent controls the same optical size
+   while their 20px line boxes remain perfectly baseline-aligned. */
+.triggerLabelCjk {
+  font-size: 12px;
+}
+
+/* Command-palette row: stable primary name plus a quiet one-line summary. */
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.optionName {
+  flex: none;
+  max-width: 42%;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionDescription {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--dsw-alias-label-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The command palette is 14/22. CJK glyphs look a step larger at that nominal
+   size, so keep its 22px row rhythm and optically match it at 13px. */
+.optionCjk {
+  font-size: 13px;
 }
 
 .chevron {

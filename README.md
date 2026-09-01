@@ -2,16 +2,29 @@
 
 English | [中文](README.zh.md)
 
-Session-scoped output styles for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): a `/style` slash command and a composer selector that change **how** the model presents answers — never what it knows or which tools it has.
+Session-scoped answer modes for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
+One selector offers presentation styles and guided conversation methods as a
+single choice. A new choice replaces the previous one; none of them change the
+model, permissions, tools, Plan, or Goal.
+The menu groups choices under **Presentation** and **Thinking guidance**.
 
-Built-in styles:
+Output styles (choose one):
 
 | Style | What it does |
 | --- | --- |
 | `default` | No guidance — the assistant answers normally. |
-| `adhd-friendly` | Action-first, ADHD-friendly output adapted from [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd). |
-| `eli5` | Plain language with one concrete analogy per idea. |
-| `bluf` | Bottom line up front, then brief reasoning. |
+| `eli5` | Explain complex ideas with plain words and analogies. |
+| `adhd-friendly` | **Start doing** — turn work into a clear next action, adapted from [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd). |
+| `bluf` | Give the answer first, then the key reasons. |
+| `layers` | Start with the essentials and reveal detail only when needed. |
+
+Guided conversation methods:
+
+| Method | What it does |
+| --- | --- |
+| `interview` | Ask one question at a time and turn a fuzzy idea into a clear brief. |
+| `feynman` | Use explanation, teach-back, and correction to build real understanding. |
+| `rubber-duck` | Question the user's reasoning until the missing assumption appears. |
 
 ## Requirements
 
@@ -24,8 +37,8 @@ Built-in styles:
 dsh plugin --profile web add dsh-output-style
 ```
 
-Restart `dsh web`. The style selector appears in the composer's tool row,
-beside the `Workspace Write` permission control.
+Restart `dsh web`. The answer-mode selector appears in the composer's tool row
+beside the permission control.
 
 Installing from a local checkout (before the package is on npm):
 
@@ -43,31 +56,34 @@ Then restart `dsh web`.
 
 ## Use
 
-- `/style` — list the current style and every available style.
-- `/style <id>` — switch (e.g. `/style bluf`).
+- `/style` — list the current output style and every available style.
+- `/style <id>` — switch (e.g. `/style layers`).
 - `/style off` (or `/style default`) — back to the default.
-- The composer dropdown does the same thing: it submits `/style <id>`.
+- `/eli5`, `/adhd`, `/bluf`, `/layers` — switch directly to that style.
+- `/method` — list the current conversation method and every method.
+- `/method <id>` — switch method; `/method off` returns to normal conversation.
+- `/interview`, `/feynman`, `/rubber-duck` — activate a method directly.
+- The composer dropdown submits the same `/style` and `/method` commands.
 
 The selection is per-session, survives resume and fork, and is reconstructed
-from the session log — the plugin folds the durable `command/run` /
-`command/done` events for the `/style` command instead of writing custom
-session events (which DSH's persistence read path would refuse from a
-third-party plugin).
+from the session log. Switching through either a command or the selector turns
+off the previous answer mode.
 
 ## How it works
 
 One package, two halves:
 
-- **host** (`src/index.ts`) — a Cordis plugin that registers the
-  `output-style:guidance` system-prompt section, the `outputStyle` session
-  projection, and the `/style` command.
-- **client** (`src/client/`) — the composer selector, bundled to
+- **host** (`src/index.ts`) — a Cordis plugin that registers style/method
+  system-prompt sections, mutually exclusive session projections, and slash
+  commands.
+- **client** (`src/client/`) — the single composer selector, bundled to
   `lib/client.js`, loaded through `exports["./client"]` and the `dsh.client`
   declaration.
 
-The host and client both read the same pure fold of `/style`'s `command/run` /
-`command/done` events (`src/style-command.ts`), so the model-visible guidance
-and the dropdown always agree.
+The host and client read the same pure folds of durable `command/run` /
+`command/done` events (`src/style-command.ts` and `src/method-command.ts`), so
+model-visible guidance and the dropdown always agree. No custom session event
+types are written.
 
 ### I Have ADHD adaptation
 
@@ -80,6 +96,15 @@ the agent's operating mode.
 The adaptation is pinned to upstream revision
 `cbe69fb83c08a37cf54d5ec9ec6bb88c8bc9973c`. See
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for attribution and license.
+
+### ELI5 design
+
+`eli5` is a DSH-focused original prompt informed by common ELI5 practice and
+community work such as [`mblode/agent-skills`](https://github.com/mblode/agent-skills/tree/main/skills/eli5).
+It is not a verbatim copy or an official implementation. It keeps the useful
+core—a plain-language gist, one consistent analogy when helpful, real technical
+names, progressive detail, and one next step—while leaving activation,
+persistence, tools, and agent modes to DSH.
 
 ## Development
 

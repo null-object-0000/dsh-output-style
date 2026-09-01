@@ -2,16 +2,27 @@
 
 [English](README.md) | 中文
 
-面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的会话级输出风格插件：通过 `/style` 斜杠命令和输入框旁的选择器，改变模型**如何呈现**答案——而不改变它知道什么、能用哪些工具。
+面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的会话级回答方式插件。
+一个选择器统一提供表达风格和对话引导方式，始终单选，后选会覆盖前选；不会改变模型、权限、工具、Plan 或 Goal。
+菜单内按**表达方式**和**思考引导**分组，便于快速区分用途。
 
-内置风格：
+输出风格（单选）：
 
 | 风格 | 作用 |
 | --- | --- |
 | `default` | 不注入任何引导，正常回答。 |
-| `adhd-friendly` | 改编自 [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd) 的行动优先、ADHD 友好输出。 |
-| `eli5` | 用平实语言，每个概念配一个具体类比。 |
-| `bluf` | 结论先行，再给简要理由。 |
+| `eli5` | 用白话和类比解释复杂内容。 |
+| `adhd-friendly` | **开始行动** — 改编自 [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd)，把任务变成明确的下一步。 |
+| `bluf` | 先说结论，再补充关键理由。 |
+| `layers` | 先给必要重点，需要时再逐层展开。 |
+
+对话引导方式：
+
+| 方法 | 作用 |
+| --- | --- |
+| `interview` | 一次问一个问题，把模糊想法梳理成清晰简报。 |
+| `feynman` | 通过解释、复述和纠错，建立真正理解。 |
+| `rubber-duck` | 通过追问推理，找到没有想清楚的假设。 |
 
 ## 环境要求
 
@@ -24,7 +35,7 @@
 dsh plugin --profile web add dsh-output-style
 ```
 
-重启 `dsh web`。风格选择器会出现在输入框工具行、`Workspace Write` 权限控件旁边。
+重启 `dsh web`。回答方式选择器会出现在输入框工具行、权限控件旁边。
 
 在发布到 npm 之前，从本地检出目录安装：
 
@@ -42,22 +53,26 @@ dsh plugin --profile web remove dsh-output-style
 
 ## 使用
 
-- `/style` —— 列出当前风格和所有可用风格。
-- `/style <id>` —— 切换（例如 `/style bluf`）。
+- `/style` —— 列出当前输出风格和所有风格。
+- `/style <id>` —— 切换（例如 `/style layers`）。
 - `/style off`（或 `/style default`）—— 回到默认。
-- 输入框旁的下拉选择器做的事一样：它提交的就是 `/style <id>`。
+- `/eli5`、`/adhd`、`/bluf`、`/layers` —— 直接切换对应风格。
+- `/method` —— 列出当前对话方法和所有方法。
+- `/method <id>` —— 切换方法；`/method off` 回到普通对话。
+- `/interview`、`/feynman`、`/rubber-duck` —— 直接开启对应方法。
+- 下拉选择器提交同样的 `/style` 和 `/method` 命令。
 
-选择是按**会话**保存的，resume / fork 后仍能恢复——插件折叠 `/style` 命令的 `command/run` /
-`command/done` 这两个持久化事件来重建当前风格，而不是写自定义会话事件（第三方插件的自定义事件会被 DSH 的持久化读取路径拒绝）。
+选择按**会话**保存，resume / fork 后仍能恢复。无论通过选择器还是快捷命令切换，新回答方式都会关闭原来的回答方式。
 
 ## 工作原理
 
 一个包，两个半边：
 
-- **host**（`src/index.ts`）—— 一个 Cordis 插件，注册 `output-style:guidance` 系统提示词段落、`outputStyle` 会话投影、`/style` 命令。
-- **client**（`src/client/`）—— 输入框选择器，打包到 `lib/client.js`，通过 `exports["./client"]` 和 `dsh.client` 声明加载。
+- **host**（`src/index.ts`）—— 注册风格/方法系统提示词、互斥的会话投影和斜杠命令。
+- **client**（`src/client/`）—— 一个输入框选择器，打包到 `lib/client.js`，通过 `exports["./client"]` 和 `dsh.client` 声明加载。
 
-host 和 client 都读取 `/style` 的 `command/run` / `command/done` 事件的同一份纯折叠（`src/style-command.ts`），所以模型看到的引导文本和下拉框显示永远一致。
+host 和 client 都读取 `command/run` / `command/done` 持久化事件的同一份纯折叠（`src/style-command.ts` 和
+`src/method-command.ts`），所以模型看到的引导和下拉框始终一致，也不需要写自定义 Session Event。
 
 ### I Have ADHD 适配
 
@@ -66,6 +81,12 @@ host 和 client 都读取 `/style` 的 `command/run` / `command/done` 事件的�
 
 本适配固定对应上游提交 `cbe69fb83c08a37cf54d5ec9ec6bb88c8bc9973c`。归属和许可证见
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)。
+
+### ELI5 设计
+
+`eli5` 是面向 DSH 场景重新编写的提示词，参考了常见的 ELI5 实践和
+[`mblode/agent-skills`](https://github.com/mblode/agent-skills/tree/main/skills/eli5)
+等社区实现，不是逐字复制，也不宣称为官方实现。它保留了白话要点、单一贯穿类比、真实技术名称、逐层深入和明确下一步；开启、持久化、工具与 Agent 模式仍由 DSH 负责。
 
 ## 开发
 

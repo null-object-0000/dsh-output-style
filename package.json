@@ -1,7 +1,7 @@
 {
   "name": "dsh-output-style",
-  "version": "0.0.1",
-  "description": "Session-scoped output styles for DeepSeek Harness: a /style command and a composer selector (Default, ADHD-friendly, ELI5, BLUF).",
+  "version": "0.1.0",
+  "description": "Single-select answer modes for DeepSeek Harness.",
   "author": "null-object-0000",
   "repository": {
     "type": "git",
@@ -60,6 +60,7 @@
     "plugin",
     "output-style",
     "response-style",
+    "conversation-mode",
     "prompt",
     "llm",
     "ui"

@@ -9,7 +9,8 @@ import { OUTPUT_STYLES } from '../src/styles'
 describe('I Have ADHD adaptation', () => {
   it('uses the adapted upstream prompt for the ADHD-friendly style', () => {
     expect(OUTPUT_STYLES['adhd-friendly'].prompt).toBe(I_HAVE_ADHD_PROMPT)
-    expect(OUTPUT_STYLES['adhd-friendly'].name).toBe('I Have ADHD')
+    expect(OUTPUT_STYLES['adhd-friendly'].name).toBe('Start doing')
+    expect(OUTPUT_STYLES['adhd-friendly'].description).toBe('Turn the task into one clear next step I can do now.')
   })
 
   it('retains all ten canonical behavioral rules', () => {
