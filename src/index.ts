@@ -26,7 +26,6 @@ import {
   foldStyleState,
   parseStyleInput,
   STYLE_COMMAND,
-  STYLE_COMMAND_ALIASES,
   type StyleFoldState,
 } from './style-command.ts'
 import { CONVERSATION_METHODS, CONVERSATION_METHOD_IDS } from './methods.ts'
@@ -35,7 +34,6 @@ import {
   EMPTY_METHOD_STATE,
   foldMethodState,
   METHOD_COMMAND,
-  METHOD_COMMAND_ALIASES,
   parseMethodInput,
   type MethodFoldState,
 } from './method-command.ts'
@@ -228,16 +226,6 @@ export function apply(ctx: Context, config: Config = {}): void {
       },
     })
 
-    for (const [shortcut, target] of Object.entries(STYLE_COMMAND_ALIASES)) {
-      commandCtx.commands.register({
-        name: shortcut,
-        description: OUTPUT_STYLES[target].description,
-        handler: ({ rawInput }) => rawInput.trim() === ''
-          ? { kind: 'success', text: `output style: ${target}` }
-          : { kind: 'error', text: `/${shortcut} does not accept input` },
-      })
-    }
-
     commandCtx.commands.register({
       name: METHOD_COMMAND,
       description: 'Switch the guided conversation method for this session',
@@ -250,15 +238,6 @@ export function apply(ctx: Context, config: Config = {}): void {
       },
     })
 
-    for (const [shortcut, target] of Object.entries(METHOD_COMMAND_ALIASES)) {
-      commandCtx.commands.register({
-        name: shortcut,
-        description: CONVERSATION_METHODS[target].description,
-        handler: ({ rawInput }) => rawInput.trim() === ''
-          ? { kind: 'success', text: `conversation method: ${target}` }
-          : { kind: 'error', text: `/${shortcut} does not accept input` },
-      })
-    }
   })
 }
 

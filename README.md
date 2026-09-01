@@ -58,11 +58,11 @@ dsh plugin --profile web remove dsh-output-style
 - `/style` —— 列出当前表达风格和所有可用风格。
 - `/style <id>` —— 切换表达风格，例如 `/style layers`。
 - `/style off` 或 `/style default` —— 回到默认。
-- `/eli5`、`/adhd`、`/bluf`、`/layers` —— 直接切换对应表达风格。
 - `/method` —— 列出当前思考引导和所有可用方法。
 - `/method <id>` —— 切换思考引导；`/method off` 回到默认。
-- `/interview`、`/feynman`、`/rubber-duck` —— 直接开启对应思考引导。
 - 页面选择器与斜杠命令使用同一套会话状态。
+
+插件不会把每种回答方式注册成独立的斜杠命令，以免占满输入框的命令面板。日常使用推荐直接通过页面选择器切换。
 
 选择按**会话**保存，resume / fork 后仍能恢复。无论通过选择器还是快捷命令切换，新回答方式都会关闭原来的回答方式。
 

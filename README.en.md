@@ -59,11 +59,12 @@ Then restart `dsh web`.
 - `/style` — list the current output style and every available style.
 - `/style <id>` — switch (e.g. `/style layers`).
 - `/style off` (or `/style default`) — back to the default.
-- `/eli5`, `/adhd`, `/bluf`, `/layers` — switch directly to that style.
 - `/method` — list the current conversation method and every method.
 - `/method <id>` — switch method; `/method off` returns to normal conversation.
-- `/interview`, `/feynman`, `/rubber-duck` — activate a method directly.
 - The composer dropdown submits the same `/style` and `/method` commands.
+
+Individual answer modes are not registered as separate slash commands, so they
+do not flood the composer command palette. Prefer the visual selector for daily use.
 
 The selection is per-session, survives resume and fork, and is reconstructed
 from the session log. Switching through either a command or the selector turns
