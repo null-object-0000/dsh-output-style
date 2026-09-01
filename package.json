@@ -1,6 +1,6 @@
 {
   "name": "dsh-output-style",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Single-select answer modes for DeepSeek Harness.",
   "author": "null-object-0000",
   "repository": {
@@ -30,7 +30,7 @@
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
     "README.md",
-    "README.zh.md"
+    "README.en.md"
   ],
   "scripts": {
     "build": "tsdown",
