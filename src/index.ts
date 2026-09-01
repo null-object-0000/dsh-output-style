@@ -136,7 +136,8 @@ function viewStyleSelection(state: StyleFoldState): OutputStyleView {
 /** The `outputStyle` projection unit. */
 const outputStyleProjection = {
   key: STYLE_PROJECTION_KEY,
-  stateVersion: 1,
+  // v2 replays sessions created before style/method mutual exclusion.
+  stateVersion: 2,
   stateSchema: styleFoldStateSchema,
   init: () => EMPTY_STYLE_STATE,
   apply: applyStyleEvent,
@@ -159,7 +160,8 @@ function viewMethodSelection(state: MethodFoldState): ConversationMethodView {
 
 const conversationMethodProjection = {
   key: METHOD_PROJECTION_KEY,
-  stateVersion: 1,
+  // Keep both axes on the same cache generation after the mutual-exclusion fix.
+  stateVersion: 2,
   stateSchema: methodFoldStateSchema,
   init: () => EMPTY_METHOD_STATE,
   apply: applyMethodEvent,

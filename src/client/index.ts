@@ -39,14 +39,22 @@ function apply(ctx: ClientCtx): void {
       locale: NS,
       inject: (sessionId = '') => ({
         chooseValue: async (kind: 'style' | 'method', value: string): Promise<string | null> => {
-          const command = kind === 'style' ? 'style' : 'method'
-          const result = await ctx.remote.commands.execute(sessionId, `/${command} ${value}`, [])
-          if (!result.ok) {
-            const code = result.error?.code ?? ''
-            const message = result.error?.message ?? 'unknown error'
-            return `${message}${code === '' ? '' : ` (${code})`}`
+          // Clear the opposite internal axis explicitly before selecting the
+          // target. The host folds also enforce mutual exclusion, but this
+          // protects an already-running DSH whose host and refreshed client
+          // bundles briefly come from different plugin revisions.
+          const lines = kind === 'style'
+            ? ['/method off', `/style ${value}`]
+            : ['/style default', `/method ${value}`]
+          for (const line of lines) {
+            const result = await ctx.remote.commands.execute(sessionId, line, [])
+            if (!result.ok) {
+              const code = result.error?.code ?? ''
+              const message = result.error?.message ?? 'unknown error'
+              return `${message}${code === '' ? '' : ` (${code})`}`
+            }
+            if (result.value === undefined) return `unknown command: ${line}`
           }
-          if (result.value === undefined) return `unknown command: /${command} ${value}`
           return null
         },
       }),

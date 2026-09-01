@@ -6,6 +6,7 @@ import {
   foldMethodState,
   parseMethodInput,
 } from '../src/method-command'
+import { foldStyleState } from '../src/style-command'
 import { CONVERSATION_METHODS } from '../src/methods'
 
 function commandRun(commandId: string, args: string, name = 'method'): SessionEvent {
@@ -56,6 +57,26 @@ describe('conversation methods', () => {
     const parked = applyMethodEvent(active, commandRun('s1', '', 'eli5'))
     expect(parked).toEqual({ current: 'interview', pending: { commandId: 's1', target: 'off' } })
     expect(applyMethodEvent(parked, commandDone('s1', 'success'))).toEqual({ current: 'off', pending: null })
+  })
+
+  it('reconstructs feynman to default and feynman to eli5 as single selections', () => {
+    const feynmanThenDefault = [
+      commandRun('m1', '', 'feynman'),
+      commandDone('m1', 'success'),
+      commandRun('s1', 'default', 'style'),
+      commandDone('s1', 'success'),
+    ]
+    expect(foldMethodState(feynmanThenDefault)).toEqual({ current: 'off', pending: null })
+    expect(foldStyleState(feynmanThenDefault)).toEqual({ current: 'default', pending: null })
+
+    const feynmanThenEli5 = [
+      commandRun('m2', '', 'feynman'),
+      commandDone('m2', 'success'),
+      commandRun('s2', 'eli5', 'style'),
+      commandDone('s2', 'success'),
+    ]
+    expect(foldMethodState(feynmanThenEli5)).toEqual({ current: 'off', pending: null })
+    expect(foldStyleState(feynmanThenEli5)).toEqual({ current: 'eli5', pending: null })
   })
 
   it('keeps method prompts behavioral and free of command coupling', () => {

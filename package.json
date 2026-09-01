@@ -1,6 +1,6 @@
 {
   "name": "dsh-output-style",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Single-select answer modes for DeepSeek Harness.",
   "author": "null-object-0000",
   "repository": {
