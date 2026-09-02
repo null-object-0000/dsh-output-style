@@ -45,6 +45,7 @@ import {
   type ConversationMethodView,
   type OutputStyleView,
 } from './types.ts'
+import { sessionEvents } from './session-events.ts'
 
 /** Cordis plugin name; keep this stable after publishing. */
 export const name = 'dsh-output-style'
@@ -187,7 +188,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     text: (context: AssembleContext): string => {
       const agent = context.agent
       if (agent === undefined) return ''
-      const state = foldStyleState(agent.session.events)
+      const state = foldStyleState(sessionEvents(agent.session))
       return state.current === 'default' ? '' : OUTPUT_STYLES[state.current].prompt
     },
   })
@@ -198,7 +199,7 @@ export function apply(ctx: Context, config: Config = {}): void {
     text: (context: AssembleContext): string => {
       const agent = context.agent
       if (agent === undefined) return ''
-      const state = foldMethodState(agent.session.events)
+      const state = foldMethodState(sessionEvents(agent.session))
       return state.current === 'off' ? '' : CONVERSATION_METHODS[state.current].prompt
     },
   })
@@ -220,7 +221,7 @@ export function apply(ctx: Context, config: Config = {}): void {
       input: { hint: '<default|adhd|eli5|bluf|layers|off>' },
       handler: ({ agent, rawInput }) => {
         const input = parseStyleInput(rawInput)
-        if (input.kind === 'none') return { kind: 'success', text: listLine(agent.session.events) }
+        if (input.kind === 'none') return { kind: 'success', text: listLine(sessionEvents(agent.session)) }
         if (input.kind === 'unknown') return { kind: 'error', text: unknownLine(input.name) }
         return { kind: 'success', text: `output style: ${input.id}` }
       },
@@ -232,7 +233,7 @@ export function apply(ctx: Context, config: Config = {}): void {
       input: { hint: '<interview|feynman|rubber-duck|off>' },
       handler: ({ agent, rawInput }) => {
         const input = parseMethodInput(rawInput)
-        if (input.kind === 'none') return { kind: 'success', text: listMethodLine(agent.session.events) }
+        if (input.kind === 'none') return { kind: 'success', text: listMethodLine(sessionEvents(agent.session)) }
         if (input.kind === 'unknown') return { kind: 'error', text: unknownMethodLine(input.name) }
         return { kind: 'success', text: `conversation method: ${input.id}` }
       },
