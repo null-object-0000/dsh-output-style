@@ -34,8 +34,8 @@ export const OFF = 'off'
 export const OUTPUT_STYLES: Readonly<Record<OutputStyleId, OutputStyle>> = Object.freeze({
   'default': {
     id: 'default',
-    name: 'Default',
-    description: 'Answer normally, without extra style guidance.',
+    name: 'Answer normally',
+    description: 'Answer directly, without a specific presentation style.',
     prompt: '',
   },
   'adhd-friendly': {
