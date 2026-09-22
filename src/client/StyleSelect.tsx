@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import clsx from 'clsx'
 import {
-  IconChevronDownOutline14,
+  IconChevronDownOutlineRegular,
   Menu,
   type MenuEntry,
 } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -155,7 +155,7 @@ export function StyleSelect(props: StyleSelectProps): ReactNode {
       onClick: () => { setOpen(!open) },
     },
       h('span', { className: clsx(css.triggerLabel, containsCjk(currentLabel) && css.triggerLabelCjk) }, currentLabel),
-      h(IconChevronDownOutline14, { className: clsx(css.chevron, open && css.chevronOpen) }),
+      h(IconChevronDownOutlineRegular, { className: clsx(css.chevron, open && css.chevronOpen) }),
     ),
   }, error !== null && h('span', { className: css.error, role: 'status', title: error }, t?.('error.failed')))
 }

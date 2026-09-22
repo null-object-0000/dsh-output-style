@@ -105,7 +105,7 @@ Agent 连续提出了八个窄问题，从服务规模一路追问到哈希碰�
 
 ## 环境要求
 
-- DeepSeek Harness `>=0.1.0-rc.7`（开发基于 `0.1.1-rc.2`）。
+- DeepSeek Harness `>=0.1.7-alpha.1`（开发基于 `0.1.7-alpha.1`）。
 - 一个要安装进去的 DSH profile（下面以 `web` profile 为例）。
 
 ## 安装

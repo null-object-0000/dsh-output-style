@@ -9,8 +9,8 @@ import { defineConfig } from 'tsdown'
 const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'))
 
 // The shell seeds these specifiers into the frozen browser module table
-// (mirrors packages/client/web/src/platform.ts at dsh 0.1.1-rc.2), so client
-// bundles leave them to the injected `require` instead of inlining.
+// (verified against the dsh 0.1.7-alpha.1 shell bundle), so client bundles
+// leave them to the injected `require` instead of inlining.
 const PLATFORM_MODULES = [
   'react', 'react/jsx-runtime', 'react-dom', 'react-dom/client', '@deepseek-ai/cordis',
   '@deepseek-ai/dsh-client-ui-slots',

@@ -28,7 +28,7 @@ Guided conversation methods:
 
 ## Requirements
 
-- DeepSeek Harness `>=0.1.0-rc.7` (developed against `0.1.1-rc.2`).
+- DeepSeek Harness `>=0.1.7-alpha.1` (developed against `0.1.7-alpha.1`).
 - A DSH profile to install into (the `web` profile below).
 
 ## Install

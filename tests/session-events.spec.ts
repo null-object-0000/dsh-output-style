@@ -7,19 +7,15 @@ const EVENTS = Object.freeze([
 ])
 
 describe('sessionEvents', () => {
-  it('uses snapshotEvents on Harness v0.1.2-alpha.4 and newer', () => {
+  it('reads the immutable log snapshot through snapshotEvents', () => {
     const snapshotEvents = vi.fn(() => EVENTS)
 
     expect(sessionEvents({ snapshotEvents })).toBe(EVENTS)
     expect(snapshotEvents).toHaveBeenCalledOnce()
   })
 
-  it('falls back to the legacy events property', () => {
-    expect(sessionEvents({ events: EVENTS })).toBe(EVENTS)
-  })
-
-  it('prefers snapshotEvents when both APIs are present during a mixed upgrade', () => {
+  it('returns the snapshot reference unchanged', () => {
     const snapshot = Object.freeze([]) as readonly SessionEvent[]
-    expect(sessionEvents({ events: EVENTS, snapshotEvents: () => snapshot })).toBe(snapshot)
+    expect(sessionEvents({ snapshotEvents: () => snapshot })).toBe(snapshot)
   })
 })
